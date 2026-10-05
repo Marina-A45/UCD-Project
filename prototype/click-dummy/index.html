@@ -1,0 +1,544 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>uniA Navi — Interactive Mobile Prototype</title>
+  <style>
+    :root{
+      --bg:#f2eff8;
+      --surface:#ffffff;
+      --surface-2:#f8f6fb;
+      --ink:#1d1631;
+      --muted:#6d647d;
+      --brand:#3f2a78;
+      --brand-2:#6141a8;
+      --brand-soft:#eee8f8;
+      --brand-border:#d8caec;
+      --accent:#d63b53;
+      --route:#d63b53;
+      --good:#0a9b66;
+      --warn:#f59e0b;
+      --shadow:0 18px 55px rgba(25,34,61,.22);
+      --card-shadow:0 10px 28px rgba(19, 26, 48, .14);
+      --radius:28px;
+      --safe: env(safe-area-inset-bottom, 0px);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0;min-height:100%;background:radial-gradient(circle at top left,#fbfaff,#ebe6f4 48%,#d8cfea);color:var(--ink)}
+    body{display:grid;place-items:center;padding:24px;}
+    .stage{display:flex;gap:28px;align-items:center;justify-content:center;max-width:1180px;width:100%;}
+    .phone{width:min(100%,410px);height:min(860px, calc(100vh - 36px));min-height:760px;background:var(--surface);border:12px solid #101828;border-radius:44px;overflow:hidden;box-shadow:var(--shadow);position:relative;isolation:isolate;}
+    .phone:before{content:"";position:absolute;top:8px;left:50%;transform:translateX(-50%);width:112px;height:24px;background:#101828;border-radius:20px;z-index:40;}
+    .app{height:100%;display:flex;flex-direction:column;background:var(--bg);position:relative;overflow:hidden;}
+    .topbar{padding:42px 16px 8px;background:linear-gradient(180deg,#fff 0%,rgba(255,255,255,.96) 72%,rgba(255,255,255,0));z-index:25;position:relative;}
+    .brandline{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px;}
+    .brand{font-weight:900;font-size:20px;display:flex;align-items:center;gap:9px;}
+    .brand .logo{width:88px;height:34px;border-radius:8px;background:var(--brand);display:block;overflow:hidden;box-shadow:0 8px 20px rgba(63,42,120,.26)}
+    .brand .logo img{width:100%;height:100%;object-fit:cover;object-position:center;display:block;}
+    .demo-pill{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:0;color:var(--brand);background:var(--brand-soft);border:1px solid var(--brand-border);border-radius:999px;padding:6px 9px;}
+    .searchRow{position:relative;}
+    .search{width:100%;height:48px;border:1.5px solid #d5dce8;border-radius:16px;background:#fff;padding:0 46px 0 15px;font-size:16px;outline:none;color:var(--ink);box-shadow:0 8px 20px rgba(20,28,48,.08);}
+    .search:focus{border-color:var(--brand);box-shadow:0 0 0 4px rgba(63,42,120,.14),0 8px 20px rgba(20,28,48,.08);}
+    .searchBtn{position:absolute;right:6px;top:6px;width:36px;height:36px;border:0;border-radius:12px;background:var(--brand);color:#fff;font-size:17px;cursor:pointer;}
+    .suggestions{position:absolute;top:54px;left:0;right:0;background:#fff;border-radius:18px;box-shadow:var(--card-shadow);border:1px solid #e5eaf2;overflow:hidden;z-index:42;display:none;}
+    .suggestions.active{display:block;}
+    .suggestion{padding:14px 15px;display:flex;gap:12px;align-items:flex-start;border-bottom:1px solid #eef2f6;cursor:pointer;}
+    .suggestion:last-child{border-bottom:0}
+    .suggestion:hover{background:#f7f3fc}
+    .suggestion .icon{width:28px;height:28px;border-radius:10px;background:var(--brand-soft);display:grid;place-items:center;color:var(--brand);font-weight:800;}
+    .suggestion b{display:block;font-size:14px;}
+    .suggestion span{display:block;font-size:12px;color:var(--muted);margin-top:2px;}
+    .chips{display:flex;gap:8px;overflow:auto;padding:10px 2px 2px;scrollbar-width:none;}
+    .chips::-webkit-scrollbar{display:none}
+    .chip{border:1px solid #d7deea;background:#fff;color:#48546b;white-space:nowrap;border-radius:999px;padding:8px 11px;font-weight:700;font-size:12px;display:flex;align-items:center;gap:6px;cursor:pointer;box-shadow:0 3px 10px rgba(20,28,48,.06);}
+    .chip.active{background:var(--brand-soft);color:var(--brand);border-color:var(--brand-border);}
+    .chip .dot{width:7px;height:7px;border-radius:999px;background:currentColor;opacity:.75}
+    .modeSwitch{display:flex;background:#e8edf6;border-radius:999px;padding:4px;margin:4px 2px 0;gap:4px;}
+    .modeSwitch button{flex:1;border:0;background:transparent;border-radius:999px;padding:8px;font-weight:800;color:#667085;cursor:pointer;}
+    .modeSwitch button.active{background:#fff;color:var(--brand);box-shadow:0 3px 12px rgba(20,28,48,.12)}
+    .mapWrap{position:relative;flex:1;margin:0 10px 90px;border-radius:28px;overflow:hidden;background:#dce6f2;box-shadow:inset 0 0 0 1px rgba(16,24,40,.08),0 14px 30px rgba(16,24,40,.14);}
+    .mapToolbar{position:absolute;right:12px;top:12px;z-index:15;display:flex;flex-direction:column;gap:8px;}
+    .toolBtn{width:42px;height:42px;border:0;border-radius:14px;background:#fff;box-shadow:0 8px 20px rgba(20,28,48,.18);display:grid;place-items:center;color:var(--brand);font-size:19px;font-weight:900;cursor:pointer;}
+    .mapScene{position:absolute;inset:0;transition:opacity .25s ease, transform .35s ease;}
+    .outdoorScene{background:#fff;}
+    .mapImage{width:100%;height:100%;object-fit:cover;object-position:48% 44%;display:block;filter:saturate(.95) contrast(1.02);}
+    .indoorScene{opacity:0;pointer-events:none;background:linear-gradient(180deg,#fbfaff,#eee8f8);padding:18px 16px 24px;}
+    .indoorTitle{position:absolute;left:16px;top:14px;background:#fff;border-radius:14px;padding:8px 10px;box-shadow:0 6px 16px rgba(20,28,48,.12);font-size:12px;z-index:6;}
+    .floorPlan{position:absolute;inset:58px 18px 96px;background:#fff;border-radius:22px;border:1px solid #d7deea;box-shadow:inset 0 0 0 1px #f1f3f8;overflow:hidden;}
+    .hall{position:absolute;background:#e7ebf2;border:1px solid #c8d1de;border-radius:12px;}
+    .hall.h1{left:36px;right:36px;top:48%;height:64px;transform:translateY(-50%)}
+    .hall.h2{left:44%;top:56px;bottom:64px;width:64px;}
+    .room{position:absolute;background:#f8fafc;border:1px solid #cdd6e2;border-radius:14px;display:grid;place-items:center;text-align:center;font-weight:900;color:#25304a;padding:8px;box-shadow:0 5px 12px rgba(16,24,40,.08)}
+    .room small{display:block;font-size:11px;color:#667085;font-weight:700;margin-top:3px;}
+    .room.target{left:7%;top:20%;width:116px;height:92px;border-color:var(--brand);background:var(--brand-soft);color:var(--brand);}
+    .room.lab{right:7%;top:19%;width:116px;height:92px;}
+    .room.study{left:7%;bottom:18%;width:116px;height:84px;}
+    .room.wc{right:7%;bottom:18%;width:116px;height:84px;}
+    .stairs{position:absolute;left:50%;top:16%;transform:translateX(-50%);background:#fff5d7;border:1px solid #e4b300;border-radius:12px;padding:8px 10px;font-size:12px;font-weight:900;}
+    .indoorDoor{position:absolute;left:50%;bottom:23px;transform:translateX(-50%);background:#ecfdf3;border:1px solid #8dd9b3;border-radius:999px;padding:8px 12px;font-size:12px;font-weight:900;color:#087a4f;}
+    .svgOverlay{position:absolute;inset:0;z-index:4;pointer-events:none;}
+    .routePath{fill:none;stroke:var(--route);stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:0;filter:drop-shadow(0 2px 3px rgba(214,59,83,.25));opacity:0;transition:opacity .2s ease;}
+    .indoorRoute{stroke-width:2.4;}
+    .routeVisible .routePath.current{opacity:1;}
+    .userDot{position:absolute;width:18px;height:18px;border-radius:50%;background:#1479ff;border:3px solid #fff;box-shadow:0 0 0 5px rgba(20,121,255,.2),0 8px 18px rgba(20,121,255,.35);z-index:8;transform:translate(-50%,-50%);transition:left .85s cubic-bezier(.2,.8,.2,1),top .85s cubic-bezier(.2,.8,.2,1);}
+    .userDot:after{content:"";position:absolute;left:50%;top:-14px;width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-bottom:9px solid #1479ff;transform:translateX(-50%)}
+    .marker{position:absolute;z-index:7;transform:translate(-50%,-100%);display:grid;place-items:center;width:38px;height:38px;border-radius:16px;background:#fff;box-shadow:0 8px 18px rgba(16,24,40,.20);border:1px solid rgba(16,24,40,.08);cursor:pointer;transition:transform .15s ease, opacity .2s ease;}
+    .marker:hover{transform:translate(-50%,-100%) scale(1.06)}
+    .marker.hidden{display:none}
+    .marker.event{background:#fff7e6;color:#b96100}.marker.wc{background:#eaf3ff;color:#1769d4}.marker.entrance{background:#eafaf2;color:#087a4f}.marker.defib{background:#eefaf1;color:#098b51}.marker.study{background:var(--brand-soft);color:var(--brand)}.marker.power{background:#fff1f1;color:#bf1d1d}.marker.open{background:#ecfdf3;color:#087a4f}
+    .marker:after{content:"";position:absolute;bottom:-7px;width:12px;height:12px;background:inherit;transform:rotate(45deg);border-right:1px solid rgba(16,24,40,.08);border-bottom:1px solid rgba(16,24,40,.08);}
+    .badge{position:absolute;left:16px;bottom:106px;background:rgba(255,255,255,.94);backdrop-filter:blur(12px);border:1px solid #e1e7f0;box-shadow:0 8px 20px rgba(20,28,48,.12);border-radius:18px;padding:9px 11px;font-size:12px;font-weight:800;display:flex;align-items:center;gap:8px;z-index:15;max-width:220px;}
+    .statusDot{width:8px;height:8px;border-radius:50%;background:var(--good);box-shadow:0 0 0 4px rgba(10,155,102,.15)}
+    .bottomSheet{position:absolute;left:0;right:0;bottom:0;z-index:30;background:rgba(255,255,255,.96);backdrop-filter:blur(18px);border-radius:28px 28px 0 0;box-shadow:0 -10px 40px rgba(16,24,40,.20);padding:12px 16px calc(14px + var(--safe));transform:translateY(calc(100% - 82px));transition:transform .36s cubic-bezier(.2,.8,.2,1);max-height:54%;overflow:auto;}
+    .bottomSheet.open{transform:translateY(0)}
+    .handle{width:44px;height:5px;background:#d0d7e4;border-radius:99px;margin:0 auto 10px;}
+    .sheetHeader{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;}
+    .sheetTitle{font-size:18px;font-weight:900;letter-spacing:0;margin:0}.sheetSub{color:var(--muted);font-size:12px;margin:4px 0 0;line-height:1.35}.closeSheet{border:0;background:#eef2f8;color:#667085;border-radius:12px;width:32px;height:32px;cursor:pointer;font-size:18px}.sheetActions{display:flex;gap:10px;margin-top:14px}.primary,.secondary{border:0;border-radius:16px;padding:12px 13px;font-size:14px;font-weight:900;cursor:pointer}.primary{background:var(--brand);color:#fff;flex:1;box-shadow:0 10px 20px rgba(63,42,120,.28)}.secondary{background:#edf2f8;color:#344054}.metaGrid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:14px}.meta{background:#f8f6fb;border:1px solid #e9e2f2;border-radius:16px;padding:10px}.meta b{font-size:11px;color:#667085;display:block;text-transform:uppercase;letter-spacing:.06em}.meta span{font-size:13px;font-weight:800;margin-top:4px;display:block}.steps{margin-top:14px;display:grid;gap:10px}.step{display:flex;gap:10px;align-items:flex-start;background:#f8f6fb;border:1px solid #e9e2f2;border-radius:16px;padding:10px}.step.active{background:var(--brand-soft);border-color:var(--brand-border)}.step .num{width:24px;height:24px;border-radius:999px;background:#e5eaf2;color:#667085;display:grid;place-items:center;font-size:12px;font-weight:900;flex:0 0 auto}.step.active .num{background:var(--brand);color:#fff}.step b{font-size:13px;display:block}.step span{font-size:12px;color:#667085;display:block;margin-top:2px}.navPanel{position:absolute;left:12px;right:12px;bottom:100px;background:#fff;border:1px solid #e1e7f0;border-radius:24px;box-shadow:0 12px 34px rgba(16,24,40,.2);padding:12px;z-index:22;display:none;}.navPanel.active{display:block}.nextStep{display:flex;gap:10px;align-items:center}.turnIcon{width:44px;height:44px;border-radius:16px;background:var(--brand-soft);color:var(--brand);display:grid;place-items:center;font-size:24px;font-weight:900}.nextText b{display:block;font-size:14px}.nextText span{display:block;font-size:12px;color:#667085;margin-top:2px}.progressBar{height:6px;background:#edf2f7;border-radius:999px;margin-top:10px;overflow:hidden}.progressBar i{display:block;height:100%;background:linear-gradient(90deg,var(--brand),var(--brand-2));border-radius:inherit;width:0%;transition:width .5s ease}.navButtons{display:flex;gap:8px;margin-top:10px}.miniBtn{border:0;background:#eef2f8;color:#344054;border-radius:14px;padding:9px 10px;font-weight:900;cursor:pointer}.miniBtn.primaryMini{background:var(--brand);color:#fff;flex:1}.toast{position:absolute;left:50%;top:176px;transform:translate(-50%,-12px);background:#121826;color:#fff;border-radius:999px;padding:10px 14px;font-size:12px;font-weight:800;box-shadow:0 12px 28px rgba(18,24,38,.25);z-index:60;opacity:0;pointer-events:none;transition:opacity .22s ease,transform .22s ease;white-space:nowrap}.toast.show{opacity:1;transform:translate(-50%,0)}
+    .bottomNav{position:absolute;left:0;right:0;bottom:0;height:82px;background:rgba(255,255,255,.94);backdrop-filter:blur(18px);border-top:1px solid #e6ebf3;display:grid;grid-template-columns:repeat(4,1fr);padding:8px 8px calc(8px + var(--safe));z-index:20;}
+    .navItem{border:0;background:transparent;border-radius:18px;color:#667085;font-weight:800;font-size:11px;display:grid;place-items:center;gap:3px;cursor:pointer}.navItem span{font-size:20px}.navItem.active{color:var(--brand);background:var(--brand-soft)}.sideNote{max-width:430px;background:rgba(255,255,255,.76);border:1px solid rgba(255,255,255,.85);border-radius:28px;padding:24px;box-shadow:var(--card-shadow);backdrop-filter:blur(16px)}.sideNote h1{font-size:32px;line-height:1.02;margin:0 0 12px;letter-spacing:0}.sideNote p{color:#4a556c;line-height:1.55;margin:0 0 14px}.sideNote ul{margin:14px 0 0;padding-left:18px;color:#4a556c;line-height:1.65}.sideNote strong{color:#17223b}.kbd{display:inline-block;border:1px solid #d4dbe8;background:#fff;border-radius:7px;padding:2px 6px;font-size:.88em;font-weight:800;color:#344054}
+    .app.indoor .outdoorScene{opacity:0;pointer-events:none}.app.indoor .indoorScene{opacity:1;pointer-events:auto}.app.indoor .modeOutdoor{color:#667085;background:transparent;box-shadow:none}.app.indoor .modeIndoor{background:#fff;color:var(--brand);box-shadow:0 3px 12px rgba(20,28,48,.12)}.app.routeVisible .bottomNav{opacity:.12;pointer-events:none}.app.routeVisible .mapWrap{margin-bottom:0}.app.routeVisible .bottomSheet{transform:translateY(100%)}
+    @media (max-width:900px){body{padding:0}.stage{display:block}.sideNote{display:none}.phone{width:100vw;height:100vh;min-height:640px;border:0;border-radius:0}.phone:before{display:none}.mapWrap{border-radius:0;margin-left:0;margin-right:0}}
+  </style>
+</head>
+<body>
+  <div class="stage">
+    <main class="phone" aria-label="uniA Navi interactive prototype in a mobile frame">
+      <div class="app" id="app">
+        <header class="topbar">
+          <div class="brandline">
+            <div class="brand"><span class="logo"><img src="assets/unilogo.png" alt="uniA" /></span> Navi</div>
+            <div class="demo-pill">Interactive demo</div>
+          </div>
+          <div class="searchRow">
+            <input id="search" class="search" placeholder="Search room, event, entrance..." value="" autocomplete="off" />
+            <button class="searchBtn" id="searchBtn" aria-label="Search">⌕</button>
+            <div class="suggestions" id="suggestions">
+              <div class="suggestion" data-action="room"><div class="icon">T</div><div><b>T 1001</b><span>Building T · HS 1001–1004 area · 5 min</span></div></div>
+              <div class="suggestion" data-action="event"><div class="icon">🎉</div><div><b>Sommerfest</b><span>Next to Building T · Fachschaft Informatik</span></div></div>
+              <div class="suggestion" data-action="entrance"><div class="icon">↗</div><div><b>Nearest accessible entrance</b><span>Building T east side · open now</span></div></div>
+            </div>
+          </div>
+          <div class="chips" id="chips">
+            <button class="chip active" data-layer="event"><span class="dot"></span>Events</button>
+            <button class="chip active" data-layer="entrance"><span class="dot"></span>Entrances</button>
+            <button class="chip active" data-layer="wc"><span class="dot"></span>Toilets</button>
+            <button class="chip" data-layer="defib"><span class="dot"></span>Defib</button>
+            <button class="chip" data-layer="study"><span class="dot"></span>Study</button>
+            <button class="chip" data-layer="power"><span class="dot"></span>Sockets</button>
+            <button class="chip" data-layer="open"><span class="dot"></span>Open now</button>
+          </div>
+          <div class="modeSwitch">
+            <button id="modeOutdoor" class="modeOutdoor active">Outdoor</button>
+            <button id="modeIndoor" class="modeIndoor">Indoor</button>
+          </div>
+        </header>
+
+        <section class="mapWrap" id="mapWrap" aria-label="Interactive university map">
+          <div class="toast" id="toast">Route started</div>
+          <div class="mapScene outdoorScene">
+            <img src="assets/sued_ost_crop.png" class="mapImage" alt="University Augsburg barrier-free campus plan, south-east section" />
+            <svg class="svgOverlay" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+              <polyline id="outdoorRoute" class="routePath current" points="92,93 88,80 77,66 66,55 55,43 49,31 39,28" />
+            </svg>
+            <div class="userDot" id="userOutdoor" style="left:92%;top:93%" title="Your simulated position"></div>
+            <button class="marker event" data-layer="event" data-info="summerfest" style="left:27%;top:48%" aria-label="Sommerfest event">🎉</button>
+            <button class="marker entrance" data-layer="entrance" data-info="entranceT" style="left:40%;top:29%" aria-label="Building T entrance">↗</button>
+            <button class="marker wc" data-layer="wc" data-info="wcT" style="left:43%;top:33%" aria-label="Toilet Building T">WC</button>
+            <button class="marker defib" data-layer="defib" data-info="defibT" style="left:20%;top:45%" aria-label="Defibrillator near P8">✚</button>
+            <button class="marker study" data-layer="study" data-info="studyP8" style="left:23%;top:52%" aria-label="Study spot near P8">☕</button>
+            <button class="marker open" data-layer="open" data-info="openT" style="left:37%;top:25%" aria-label="Building T open status">●</button>
+          </div>
+
+          <div class="mapScene indoorScene">
+            <div class="indoorTitle"><b>Building T</b> · Ground floor · Indoor mode</div>
+            <div class="floorPlan">
+              <div class="hall h1"></div><div class="hall h2"></div>
+              <div class="room target">T 1001<small>Lecture hall</small></div>
+              <div class="room lab">T 1002<small>Seminar</small></div>
+              <div class="room study">Study nook<small>8 seats</small></div>
+              <div class="room wc">WC<small>accessible</small></div>
+              <div class="stairs">stairs / lift</div>
+              <div class="indoorDoor">Entrance</div>
+              <svg class="svgOverlay" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+                <polyline id="indoorRoute" class="routePath indoorRoute current" points="50,92 50,61 34,61 25,41 20,30" />
+              </svg>
+              <div class="userDot" id="userIndoor" style="left:50%;top:92%"></div>
+              <button class="marker wc" data-layer="wc" data-info="wcT" style="left:82%;top:74%" aria-label="Indoor toilet">WC</button>
+              <button class="marker power" data-layer="power" data-info="sockets" style="left:18%;top:72%" aria-label="Power sockets">🔌</button>
+              <button class="marker study" data-layer="study" data-info="studyIndoor" style="left:14%;top:84%" aria-label="Indoor study spot">📚</button>
+            </div>
+          </div>
+
+          <div class="mapToolbar" aria-label="Map tools">
+            <button class="toolBtn" id="locateBtn" title="Center on me">⌖</button>
+            <button class="toolBtn" id="accessBtn" title="Accessible route">♿</button>
+            <button class="toolBtn" id="layersBtn" title="Show opening information">≡</button>
+          </div>
+          <div class="badge" id="liveBadge"><span class="statusDot"></span><span id="liveText">Building T open · elevator available</span></div>
+        </section>
+
+        <section class="navPanel" id="navPanel" aria-live="polite">
+          <div class="nextStep">
+            <div class="turnIcon" id="turnIcon">↗</div>
+            <div class="nextText"><b id="nextTitle">Head to Building T entrance</b><span id="nextSub">5 min · barrier-free route via east entrance</span></div>
+          </div>
+          <div class="progressBar"><i id="progress"></i></div>
+          <div class="navButtons">
+            <button class="miniBtn" id="stopNav">Stop</button>
+            <button class="miniBtn" id="voiceBtn">🔊 Voice</button>
+            <button class="miniBtn primaryMini" id="walkBtn">Simulate walking</button>
+          </div>
+        </section>
+
+        <nav class="bottomNav" aria-label="Main navigation">
+          <button class="navItem active" data-tab="map"><span>🗺️</span>Map</button>
+          <button class="navItem" data-tab="events"><span>🎉</span>Events</button>
+          <button class="navItem" data-tab="saved"><span>★</span>Saved</button>
+          <button class="navItem" data-tab="more"><span>☰</span>More</button>
+        </nav>
+
+        <section class="bottomSheet open" id="sheet">
+          <div class="handle"></div>
+          <div id="sheetContent"></div>
+        </section>
+      </div>
+    </main>
+
+    <aside class="sideNote">
+      <h1>uniA Navi<br/>mobile prototype</h1>
+      <p>This is a clickable front-end demo for a university navigation app that goes beyond Google Maps by guiding users to exact rooms, entrances, indoor routes, events, and live campus information.</p>
+      <p>Try: type <span class="kbd">T 1001</span>, tap an event marker, toggle layers, then press <strong>Start navigation</strong>.</p>
+      <ul>
+        <li>Outdoor-to-indoor route transition</li>
+        <li>Room search and destination popup</li>
+        <li>Event, toilet, entrance, socket and opening layers</li>
+        <li>Mock real-time status for openings and accessibility</li>
+      </ul>
+    </aside>
+  </div>
+
+  <script>
+    const app = document.getElementById('app');
+    const search = document.getElementById('search');
+    const searchBtn = document.getElementById('searchBtn');
+    const suggestions = document.getElementById('suggestions');
+    const sheet = document.getElementById('sheet');
+    const sheetContent = document.getElementById('sheetContent');
+    const navPanel = document.getElementById('navPanel');
+    const progress = document.getElementById('progress');
+    const nextTitle = document.getElementById('nextTitle');
+    const nextSub = document.getElementById('nextSub');
+    const turnIcon = document.getElementById('turnIcon');
+    const toast = document.getElementById('toast');
+    const liveText = document.getElementById('liveText');
+    const userOutdoor = document.getElementById('userOutdoor');
+    const userIndoor = document.getElementById('userIndoor');
+    const modeOutdoor = document.getElementById('modeOutdoor');
+    const modeIndoor = document.getElementById('modeIndoor');
+
+    const activeLayers = new Set(['event','entrance','wc']);
+    let navStep = 0;
+    let navActive = false;
+
+    const outdoorPoints = [
+      [92,93],[88,80],[77,66],[66,55],[55,43],[49,31],[39,28]
+    ];
+    const indoorPoints = [
+      [50,92],[50,61],[34,61],[25,41],[20,30]
+    ];
+    const navSteps = [
+      {mode:'outdoor', point:0, icon:'↗', title:'Head north from the tram stop', sub:'Follow the barrier-free campus path toward Building T.'},
+      {mode:'outdoor', point:2, icon:'↖', title:'Pass P8 and continue to Building T', sub:'You are 3 min away. Entrances and WC layer are visible.'},
+      {mode:'outdoor', point:5, icon:'↗', title:'Use the east entrance of Building T', sub:'The system will switch to indoor mode at the entrance.'},
+      {mode:'indoor', point:1, icon:'↑', title:'Indoor mode activated', sub:'Go straight through the lobby, then follow the corridor.'},
+      {mode:'indoor', point:3, icon:'↖', title:'Turn left after the lift', sub:'T 1001 is at the lecture hall area.'},
+      {mode:'indoor', point:4, icon:'✓', title:'Arrived at T 1001', sub:'Destination reached. Room card is saved in recent searches.'}
+    ];
+
+    const data = {
+      home: {
+        title: 'Campus map', sub: 'Search a room or tap a layer marker. This demo uses mocked live data.',
+        actions: '<button class="primary" onclick="showRoom()">Search T 1001</button><button class="secondary" onclick="showOpenings()">Open now</button>',
+        meta: [ ['Best feature','room-to-room routing'], ['Live layers','events, WCs, entrances'] ]
+      },
+      room: {
+        title: 'T 1001', sub: 'Building T · HS 1001–1004 area · ground floor',
+        actions: '<button class="primary" onclick="startNavigation()">Start navigation</button><button class="secondary" onclick="setMode(\'indoor\')">Preview indoor</button>',
+        meta: [ ['ETA','5 min'], ['Best entrance','East entrance'], ['Accessibility','Lift available'], ['Status','Building open'] ],
+        steps: [
+          ['Outdoor route','Walk from current location to Building T.'],
+          ['Entrance detection','App detects the east entrance and changes view.'],
+          ['Indoor route','Follow corridor to T 1001.']
+        ]
+      },
+      summerfest: {
+        title: 'Sommerfest', sub: 'Enjoy the sun with fellow students and a cool drink. Location: next to Building T. Organizer: Fachschaft Informatik.',
+        actions: '<button class="primary" onclick="startEventRoute()">Navigate to event</button><button class="secondary" onclick="showToast(\'Added to calendar mockup\')">Save</button>',
+        meta: [ ['Where','Next to T building'], ['Who','Everyone'], ['Layer','Events'], ['Status','Happening today'] ]
+      },
+      entranceT: {
+        title: 'Building T east entrance', sub: 'Recommended entry for T 1001. Door status is simulated as real-time information.',
+        actions: '<button class="primary" onclick="startNavigation()">Route via this entrance</button>',
+        meta: [ ['Status', getOpenLabel(7,22)], ['Accessibility','Step-free'], ['Nearby','WC, elevator'], ['Switch','Indoor map here'] ]
+      },
+      wcT: {
+        title: 'Accessible WC', sub: 'Building T · lower/ground area. Visible when the Toilets layer is active.',
+        actions: '<button class="primary" onclick="showToast(\'WC pinned for route\')">Pin to route</button>',
+        meta: [ ['Distance','1 min'], ['Status','Available'], ['Level','UG / EG'], ['Access','Barrier-free'] ]
+      },
+      defibT: {
+        title: 'Defibrillator / first-aid point', sub: 'Emergency layer marker near the T / P8 area.',
+        actions: '<button class="primary" onclick="showToast(\'Emergency info opened\')">Open emergency info</button>',
+        meta: [ ['Layer','Defib'], ['Visible','Outdoor'], ['Emergency','Call campus security'], ['Distance','2 min'] ]
+      },
+      studyP8: {
+        title: 'Study spot near P8', sub: 'Quiet outdoor/nearby area. Availability is mocked for the prototype.',
+        actions: '<button class="primary" onclick="showToast(\'Study spot saved\')">Save spot</button>',
+        meta: [ ['Seats','12 free'], ['Sockets','Nearby'], ['Noise','Low'], ['Open','All day'] ]
+      },
+      studyIndoor: {
+        title: 'Indoor study nook', sub: 'Small study area inside Building T with power sockets nearby.',
+        actions: '<button class="primary" onclick="showToast(\'Study nook saved\')">Save spot</button>',
+        meta: [ ['Seats','8'], ['Occupancy','Medium'], ['Sockets','Yes'], ['Noise','Quiet'] ]
+      },
+      sockets: {
+        title: 'Power sockets', sub: 'Socket layer for indoor navigation. Useful for finding study places without another website.',
+        actions: '<button class="primary" onclick="showToast(\'Socket layer kept active\')">Keep visible</button>',
+        meta: [ ['Room','near T 1001'], ['Count','6'], ['Status','Available'], ['Layer','Sockets'] ]
+      },
+      openT: {
+        title: 'Opening information', sub: 'Mock live status for important campus places. In a production app this would come from university APIs or admin updates.',
+        actions: '<button class="primary" onclick="showOpenings()">Show all opening info</button>',
+        meta: [ ['Building T', getOpenLabel(6,22)], ['East entrance', getOpenLabel(7,22)], ['Elevator','Available'], ['Mensa', getOpenLabel(11,14)] ]
+      }
+    };
+
+    function getOpenLabel(start, end){
+      const h = new Date().getHours();
+      const d = new Date().getDay();
+      if(d === 0) return 'Closed';
+      if(h >= start && h < end) return 'Open now';
+      if(h < start) return `Opens ${String(start).padStart(2,'0')}:00`;
+      return 'Closed now';
+    }
+
+    function updateLiveBadge(){
+      const status = getOpenLabel(6,22);
+      liveText.textContent = `Building T ${status.toLowerCase()} · elevator available`;
+    }
+
+    function renderSheet(key='home'){
+      const item = data[key] || data.home;
+      sheetContent.innerHTML = `
+        <div class="sheetHeader">
+          <div><h2 class="sheetTitle">${item.title}</h2><p class="sheetSub">${item.sub}</p></div>
+          <button class="closeSheet" onclick="closeSheet()" aria-label="Close sheet">×</button>
+        </div>
+        ${item.meta ? `<div class="metaGrid">${item.meta.map(m=>`<div class="meta"><b>${m[0]}</b><span>${m[1]}</span></div>`).join('')}</div>` : ''}
+        ${item.steps ? `<div class="steps">${item.steps.map((s,i)=>`<div class="step ${i===0?'active':''}"><div class="num">${i+1}</div><div><b>${s[0]}</b><span>${s[1]}</span></div></div>`).join('')}</div>` : ''}
+        <div class="sheetActions">${item.actions || ''}</div>
+      `;
+      openSheet();
+    }
+
+    function openSheet(){ sheet.classList.add('open'); }
+    function closeSheet(){ sheet.classList.remove('open'); }
+    window.closeSheet = closeSheet;
+
+    function showToast(msg){
+      toast.textContent = msg;
+      toast.classList.add('show');
+      setTimeout(()=>toast.classList.remove('show'), 1700);
+    }
+    window.showToast = showToast;
+
+    function showRoom(){
+      search.value = 'T 1001';
+      renderSheet('room');
+      suggestions.classList.remove('active');
+      setMode('outdoor');
+      showToast('Destination found: T 1001');
+    }
+    window.showRoom = showRoom;
+
+    function showOpenings(){
+      renderSheet('openT');
+      activeLayers.add('open');
+      document.querySelectorAll('.chip[data-layer="open"]').forEach(c=>c.classList.add('active'));
+      updateLayerVisibility();
+      showToast('Live openings layer enabled');
+    }
+    window.showOpenings = showOpenings;
+
+    function setMode(mode){
+      app.classList.toggle('indoor', mode === 'indoor');
+      modeOutdoor.classList.toggle('active', mode !== 'indoor');
+      modeIndoor.classList.toggle('active', mode === 'indoor');
+      updateRouteClass();
+      updateLayerVisibility();
+    }
+    window.setMode = setMode;
+
+    function startNavigation(){
+      navActive = true;
+      navStep = 0;
+      app.classList.add('routeVisible');
+      navPanel.classList.add('active');
+      setMode('outdoor');
+      sheet.classList.remove('open');
+      updateNavUI();
+      showToast('Route started to T 1001');
+    }
+    window.startNavigation = startNavigation;
+
+    function startEventRoute(){
+      navActive = true;
+      navStep = 1;
+      app.classList.add('routeVisible');
+      navPanel.classList.add('active');
+      setMode('outdoor');
+      sheet.classList.remove('open');
+      nextTitle.textContent = 'Walk to the Sommerfest marker';
+      nextSub.textContent = 'Event is next to Building T. Tap Stop to return.';
+      turnIcon.textContent = '🎉';
+      progress.style.width = '45%';
+      userOutdoor.style.left = '55%'; userOutdoor.style.top = '43%';
+      showToast('Event route started');
+    }
+    window.startEventRoute = startEventRoute;
+
+    function stopNavigation(){
+      navActive = false;
+      app.classList.remove('routeVisible');
+      navPanel.classList.remove('active');
+      setMode('outdoor');
+      userOutdoor.style.left = '92%'; userOutdoor.style.top = '93%';
+      userIndoor.style.left = '50%'; userIndoor.style.top = '92%';
+      progress.style.width = '0%';
+      renderSheet('home');
+      showToast('Navigation stopped');
+    }
+
+    function updateRouteClass(){
+      const indoor = app.classList.contains('indoor');
+      document.getElementById('outdoorRoute').classList.toggle('current', !indoor);
+      document.getElementById('indoorRoute').classList.toggle('current', indoor);
+    }
+
+    function updateNavUI(){
+      const step = navSteps[Math.min(navStep, navSteps.length-1)];
+      if(step.mode === 'indoor') setMode('indoor'); else setMode('outdoor');
+      nextTitle.textContent = step.title;
+      nextSub.textContent = step.sub;
+      turnIcon.textContent = step.icon;
+      progress.style.width = `${Math.round((navStep)/(navSteps.length-1)*100)}%`;
+      if(step.mode === 'outdoor'){
+        const p = outdoorPoints[step.point];
+        userOutdoor.style.left = p[0] + '%'; userOutdoor.style.top = p[1] + '%';
+      } else {
+        const p = indoorPoints[step.point];
+        userIndoor.style.left = p[0] + '%'; userIndoor.style.top = p[1] + '%';
+      }
+      if(navStep === 3) showToast('Entrance detected: switched to indoor map');
+      if(navStep === navSteps.length-1) showToast('Arrived at T 1001');
+    }
+
+    function walkNext(){
+      if(!navActive) return startNavigation();
+      if(navStep < navSteps.length-1){
+        navStep++;
+        updateNavUI();
+      } else {
+        renderSheet('room');
+        navPanel.classList.remove('active');
+        app.classList.remove('routeVisible');
+        navActive = false;
+      }
+    }
+
+    function updateLayerVisibility(){
+      const indoor = app.classList.contains('indoor');
+      document.querySelectorAll('.marker').forEach(marker=>{
+        const layer = marker.dataset.layer;
+        const sceneIndoor = !!marker.closest('.indoorScene');
+        const sceneOutdoor = !!marker.closest('.outdoorScene');
+        const sceneOk = indoor ? sceneIndoor : sceneOutdoor;
+        marker.classList.toggle('hidden', !(activeLayers.has(layer) && sceneOk));
+      });
+    }
+
+    document.querySelectorAll('.chip').forEach(chip=>{
+      chip.addEventListener('click', ()=>{
+        const layer = chip.dataset.layer;
+        if(activeLayers.has(layer)) activeLayers.delete(layer); else activeLayers.add(layer);
+        chip.classList.toggle('active', activeLayers.has(layer));
+        updateLayerVisibility();
+      });
+    });
+
+    document.querySelectorAll('.marker').forEach(marker=>{
+      marker.addEventListener('click', ()=>{
+        const info = marker.dataset.info;
+        renderSheet(info);
+      });
+    });
+
+    search.addEventListener('focus', ()=> suggestions.classList.add('active'));
+    search.addEventListener('input', ()=>{
+      suggestions.classList.add('active');
+      if(search.value.trim().toLowerCase().includes('t')) showRoom();
+    });
+    searchBtn.addEventListener('click', ()=>{
+      const q = search.value.trim().toLowerCase();
+      if(q.includes('sommer') || q.includes('event')) renderSheet('summerfest');
+      else showRoom();
+    });
+    document.querySelectorAll('.suggestion').forEach(s=>{
+      s.addEventListener('click', ()=>{
+        const action = s.dataset.action;
+        if(action === 'room') showRoom();
+        if(action === 'event') renderSheet('summerfest');
+        if(action === 'entrance') renderSheet('entranceT');
+        suggestions.classList.remove('active');
+      });
+    });
+    document.addEventListener('click', (e)=>{
+      if(!e.target.closest('.searchRow')) suggestions.classList.remove('active');
+    });
+
+    modeOutdoor.addEventListener('click', ()=>setMode('outdoor'));
+    modeIndoor.addEventListener('click', ()=>setMode('indoor'));
+    document.getElementById('walkBtn').addEventListener('click', walkNext);
+    document.getElementById('stopNav').addEventListener('click', stopNavigation);
+    document.getElementById('voiceBtn').addEventListener('click', ()=>showToast('Voice guidance enabled'));
+    document.getElementById('locateBtn').addEventListener('click', ()=>showToast('Centered on your simulated location'));
+    document.getElementById('accessBtn').addEventListener('click', ()=>showToast('Accessible route preferred'));
+    document.getElementById('layersBtn').addEventListener('click', showOpenings);
+
+    document.querySelectorAll('.navItem').forEach(item=>{
+      item.addEventListener('click',()=>{
+        document.querySelectorAll('.navItem').forEach(i=>i.classList.remove('active'));
+        item.classList.add('active');
+        const tab = item.dataset.tab;
+        if(tab === 'map') renderSheet('home');
+        if(tab === 'events') renderSheet('summerfest');
+        if(tab === 'saved') {
+          sheetContent.innerHTML = `<div class="sheetHeader"><div><h2 class="sheetTitle">Saved places</h2><p class="sheetSub">Prototype list: T 1001, Building T entrance, Sommerfest.</p></div><button class="closeSheet" onclick="closeSheet()">×</button></div><div class="steps"><div class="step active"><div class="num">★</div><div><b>T 1001</b><span>Recent destination</span></div></div><div class="step"><div class="num">★</div><div><b>Sommerfest</b><span>Saved event</span></div></div></div>`;
+          openSheet();
+        }
+        if(tab === 'more') {
+          sheetContent.innerHTML = `<div class="sheetHeader"><div><h2 class="sheetTitle">More</h2><p class="sheetSub">Prototype settings: accessibility-first routing, voice guidance, and campus data sources.</p></div><button class="closeSheet" onclick="closeSheet()">×</button></div><div class="metaGrid"><div class="meta"><b>Routing</b><span>Barrier-free preferred</span></div><div class="meta"><b>Data</b><span>Mock API</span></div><div class="meta"><b>Mode</b><span>Mobile demo</span></div><div class="meta"><b>Version</b><span>0.1</span></div></div>`;
+          openSheet();
+        }
+      });
+    });
+
+    updateLiveBadge();
+    renderSheet('home');
+    updateLayerVisibility();
+    setInterval(updateLiveBadge, 60000);
+  </script>
+</body>
+</html>
